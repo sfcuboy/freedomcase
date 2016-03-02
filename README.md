@@ -6,6 +6,6 @@
 ```
 
 # Get started
-```php
+```Bash
   php punitframe.php tests/case.ini
 ```
