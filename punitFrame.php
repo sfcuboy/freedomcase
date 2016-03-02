@@ -20,6 +20,7 @@ class punitFrame {
 			die("read from ini file ".$configFile. " failure!\n");
 		}
 
+		$config['method']['method'] = strtolower($config['method']['method']);
 		$this->_config = $config;
 		$this->_url = $config['url']['url'];
 		Requests::register_autoloader();
@@ -27,7 +28,9 @@ class punitFrame {
 	}
 
 	public function send(){
-
+		if('get' == $this->_config['method']['method'] && $this->_config['field']){
+			$this->_url.='?'.http_build_query($this->_config['field']);
+		}
 		$request = Requests::request($this->_url, $this->_config['headers'], $this->_config['field'], $this->_config['method']['method']);
 		if(200 == $request->status_code){
 			return $request;
@@ -53,17 +56,23 @@ class punitFrame {
 
 	public function getResult(){
 		$ret = $this->filter();
-		echo "\n",$this->_config['title']['title'], "  ========>  ", $ret ? "Pass" : "Failure";
+		echo "\n",$this->_config['title']['title'], "  ========>  ", $ret ? "Pass" : "Failure","\n";
 	}
 
 	public function filter(){
-		echo "Request:[ ",$this->_config['url']['url']," ]\n";
+		echo "Request:[ ",$this->_config['url']['url']," ]\n\n";
+		echo "Ret:",$this->_request->body,"\n\n";
 		$condition = isset($this->_config['condition']) ? $this->_config['condition'] : array();
 		if($condition){
 			$data = $this->body;
 
 			foreach($condition as $key => $val){
-				list($confval, $dot) = explode('|', $val);
+				if(strpos($val, '|')){
+					list($confval, $dot) = explode('|', $val);
+				}else{
+					$confval = $val;
+					$dot = "==";
+				}
 				echo $key," ",$dot," ",$confval,"  ? ";
 
 				if(strpos($key, 'ata.')>0 && 'json_decode' == $this->_config['common']['parsetype']){
@@ -78,7 +87,7 @@ class punitFrame {
 
 					$value = $data[$key];
 				}
-				echo "[",json_encode($value),"]\n";
+				echo "[", is_array($value) || is_object($value) ? json_encode($value) : $value,"]\n";
 
 				switch ($dot) {
 					case '==':
