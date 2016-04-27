@@ -8,8 +8,10 @@ class punitFrame {
 	private $_config;
 	private $_request;
 	public 	$body;
+	public  $showDetail;
 
-	public function __construct($configFile = ''){
+	public function __construct($configFile = '', $showDetail = false){
+		$this->showDetail = $showDetail;
 		if($configFile && file_exists($configFile) ){
 			$config = parse_ini_file($configFile, true);
 		}else{
@@ -60,8 +62,10 @@ class punitFrame {
 	}
 
 	public function filter(){
-		echo "Request:[ ",$this->_config['url']['url']," ]\n\n";
-		echo "Ret:",$this->_request->body,"\n\n";
+		if($this->showDetail){
+			echo "Request:[ ",$this->_config['url']['url']," ]\n\n";
+			echo "Ret:",$this->_request->body,"\n\n";
+		}
 		$condition = isset($this->_config['condition']) ? $this->_config['condition'] : array();
 		if($condition){
 			$data = $this->body;
@@ -73,8 +77,9 @@ class punitFrame {
 					$confval = $val;
 					$dot = "==";
 				}
-				echo $key," ",$dot," ",$confval,"  ? ";
-
+				if($this->showDetail){
+					echo $key," ",$dot," ",$confval,"  ? ";
+				}
 				if(strpos($key, 'ata.')>0 && 'json_decode' == $this->_config['common']['parsetype']){
 					//找到类似酱紫的变量data.0.id,转换成什么呢？ $data[0]['id'];
 					$ary = explode('.', $key);
@@ -87,8 +92,9 @@ class punitFrame {
 
 					$value = $data[$key];
 				}
-				echo "[", is_array($value) || is_object($value) ? json_encode($value) : $value,"]\n";
-
+				if($this->showDetail){
+					echo "[", is_array($value) || is_object($value) ? json_encode($value) : $value,"]\n";
+				}
 				switch ($dot) {
 					case '==':
 						if($value != $confval){
@@ -136,7 +142,8 @@ class punitFrame {
 }
 
 $file = isset($argv[1]) ? $argv[1] : '';
-$case = new punitFrame($file);
+$showDetail = isset($argv[2]) && $argv[2] == '-v' ? true : false;
+$case = new punitFrame($file, $showDetail);
 $case ->parse();
 $result = $case ->getResult();
 ?>
